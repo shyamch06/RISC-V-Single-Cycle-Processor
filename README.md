@@ -19,6 +19,50 @@ As a demo application, the processor runs a small hand-assembled program that co
 - BCD converter (double-dabble algorithm) + 7-segment display driver with digit multiplexing, so a 32-bit register value can be shown on a 4-digit display
 - **XDC constraint file** for Basys3 board
 - Fully synthesizable Verilog, tested on real FPGA hardware
+
+---
+## Verification & Results
+
+Correctness was verified with a self-checking simulation testbench in addition to hardware testing on the Basys 3.
+
+### Self-Checking Testbench
+
+A custom testbench drives the design through Icarus Verilog and automatically checks every computed Fibonacci value against the expected sequence, rather than relying on manual waveform inspection:
+
+    Summary: 10 PASS, 0 FAIL out of 10 checks
+
+The testbench also confirmed correct 32-bit overflow behavior: since the demo loop has no halt condition, it keeps computing Fibonacci terms indefinitely, and terms past roughly the 47th correctly wrap around via standard unsigned integer overflow — expected, mathematically verified behavior rather than a bug.
+
+### Waveform
+
+`fib_value` (register `x1`) stepping cleanly through the Fibonacci sequence in GTKWave:
+
+![Fibonacci sequence waveform](https://raw.githubusercontent.com/shyamch06/RISC-V-Single-Cycle-Processor/main/GTK_Wave/Wave%20Form.jpeg)
+
+### Post-Implementation Timing & Utilization (Vivado, XC7A35T)
+
+| Metric | Result |
+|---|---|
+| Target clock | 100 MHz (10.000 ns) |
+| Worst Negative Slack (WNS) | +5.466 ns |
+| Estimated max frequency | ~221 MHz |
+| Slice LUTs | 845 / 20,800 (4%) |
+| Slice Registers | 470 / 41,600 (1%) |
+| Failing endpoints | 0 |
+
+Full reports: [Timing Summary](https://github.com/shyamch06/RISC-V-Single-Cycle-Processor/blob/main/Reports/Timing%20Summary.jpeg) · [Utilization Report](https://github.com/shyamch06/RISC-V-Single-Cycle-Processor/blob/main/Reports/Utilization%20Report.jpeg)
+
+---
+## How to Simulate
+
+```bash
+iverilog -o riscv_sim *.v
+vvp riscv_sim
+gtkwave singlecycle_riscv.vcd
+```
+
+The testbench speeds up the clock divider for simulation via a `defparam` override on `MAX_COUNT`, so the full 10-check run completes in a fraction of a second of simulated time instead of waiting on the display-speed divider.
+
 ---
 ## Repository Structure
 
@@ -50,12 +94,10 @@ As a demo application, the processor runs a small hand-assembled program that co
 
 ---
 
-## Author 
+## Author
 
 Cherukuri Shyam Sundhar
 
 Electronics and Communication Engineering
 
 IIT Bhubaneswar
-
-
